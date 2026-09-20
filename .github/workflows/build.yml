@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Load distro build args
-        run: cat "distros/${{ matrix.distro }}.env" >> "$GITHUB_ENV"
+        run: grep -v '^\s*#' "distros/${{ matrix.distro }}.env" | grep -v '^\s*$' >> "$GITHUB_ENV"
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
