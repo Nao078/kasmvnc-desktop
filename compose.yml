@@ -1,0 +1,29 @@
+name: kasmvnc-desktop
+
+services:
+  desktop:
+    image: kasmvnc-desktop:${IMAGE_TAG:-local}
+    init: true
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+      args:
+        BASE_IMAGE: ${BASE_IMAGE:?BASE_IMAGE is required (pass --env-file distros/<name>.env)}
+        KASMVNC_VERSION: ${KASMVNC_VERSION:?KASMVNC_VERSION is required (pass --env-file distros/<name>.env)}
+        KASMVNC_CODENAME: ${KASMVNC_CODENAME:?KASMVNC_CODENAME is required (pass --env-file distros/<name>.env)}
+        KASMVNC_SHA256: ${KASMVNC_SHA256:?KASMVNC_SHA256 is required (pass --env-file distros/<name>.env)}
+        APP_USER: ${APP_USER:-appuser}
+        APP_UID: ${APP_UID:-1000}
+        APP_GID: ${APP_GID:-1000}
+        ENABLE_SUDO: ${ENABLE_SUDO:-true}
+    environment:
+      TZ: ${TZ:-Asia/Tokyo}
+      VNC_LOGIN_USER: ${VNC_LOGIN_USER:-desktop}
+      VNC_PASS: ${VNC_PASS:?VNC_PASS is required}
+      VNC_GEOMETRY: ${VNC_GEOMETRY:-1920x1080}
+      VNC_DEPTH: ${VNC_DEPTH:-24}
+    ports:
+      - "${VNC_BIND_ADDRESS:-127.0.0.1}:${VNC_PORT:-8443}:8443"
+    shm_size: ${SHM_SIZE:-1gb}
+    stop_grace_period: 30s
+    restart: unless-stopped
