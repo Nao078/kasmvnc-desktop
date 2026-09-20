@@ -1,0 +1,26 @@
+name: my-project
+
+services:
+  desktop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    environment:
+      TZ: ${TZ:-Asia/Tokyo}
+      VNC_LOGIN_USER: ${VNC_LOGIN_USER:-desktop}
+      VNC_PASS: ${VNC_PASS:?VNC_PASS is required}
+      VNC_GEOMETRY: ${VNC_GEOMETRY:-1920x1080}
+      VNC_DEPTH: ${VNC_DEPTH:-24}
+    ports:
+      # 127.0.0.1バインド + SSHトンネルやプライベート網経由での利用を推奨する。
+      # インターネットに直接公開しない。
+      - "127.0.0.1:8443:8443"
+    shm_size: 1gb
+    stop_grace_period: 30s
+    volumes:
+      - home-data:/home/appuser
+    restart: unless-stopped
+
+volumes:
+  home-data:
