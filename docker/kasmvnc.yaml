@@ -1,0 +1,40 @@
+desktop:
+  resolution:
+    width: __VNC_WIDTH__
+    height: __VNC_HEIGHT__
+  allow_resize: true
+  pixel_depth: __VNC_DEPTH__
+
+command_line:
+  prompt: false
+
+pointer:
+  enabled: true
+
+runtime_configuration:
+  allow_client_to_override_kasm_server_settings: true
+  allow_override_standard_vnc_server_settings: true
+  allow_override_list:
+    - pointer.enabled
+    - data_loss_prevention.clipboard.server_to_client.enabled
+    - data_loss_prevention.clipboard.client_to_server.enabled
+
+data_loss_prevention:
+  clipboard:
+    delay_between_operations: none
+    server_to_client:
+      enabled: true
+      size: unlimited
+    client_to_server:
+      enabled: true
+      size: unlimited
+  logging:
+    level: off
+
+network:
+  interface: 0.0.0.0
+  websocket_port: 8443
+  ssl:
+    require_ssl: true
+    pem_certificate: /etc/ssl/certs/ssl-cert-snakeoil.pem
+    pem_key: /etc/ssl/private/ssl-cert-snakeoil.key

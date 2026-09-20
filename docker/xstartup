@@ -1,0 +1,13 @@
+#!/bin/sh
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+export HOME="${HOME:-/home/appuser}"
+export DISPLAY="${DISPLAY:-:1}"
+
+dbus-launch --exit-with-session startxfce4 &
+xfce_pid=$!
+
+vncconfig -nowin >/tmp/vncconfig.log 2>&1 &
+
+wait "${xfce_pid}"
