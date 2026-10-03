@@ -34,12 +34,12 @@ FROM ghcr.io/nao078/kasmvnc-desktop:ubuntu-24.04-<semver>
 
 ```bash
 cp templates/project/.env.example .env
-# .env を編集し、VNC_PASS を必ず変更する
+# 必要なら .env を編集する（VNC_PASS を空のままにすると、初回に乱数のパスワードがログへ出る）
 
 docker compose -f templates/project/compose.yml up -d --build
 ```
 
-ブラウザで `https://127.0.0.1:8443` にアクセスし、`VNC_LOGIN_USER`（既定 `desktop`）と `VNC_PASS` でログインする。自己署名証明書のため初回接続時はブラウザの警告を許可する。
+ブラウザで `https://127.0.0.1:8443` にアクセスし、`VNC_LOGIN_USER`（既定 `desktop`）と `VNC_PASS` でログインする。`VNC_PASS` を指定していない場合は、初回起動時のログ（`docker compose logs`）に出るパスワードでログインし、VNCデスクトップ上の`kasmvncpasswd`で変更する（変更は再起動なしで反映され、volumeに残る）。自己署名証明書のため初回接続時はブラウザの警告を許可する。
 
 ## このリポジトリ自体の動作確認
 
@@ -60,7 +60,7 @@ docker compose --env-file .env --env-file distros/ubuntu-24.04.env up -d --build
 | `KASMVNC_VERSION` / `KASMVNC_CODENAME` / `KASMVNC_SHA256` | (distros/*.envで指定) | KasmVNCの `.deb` のバージョン・コードネーム・SHA256 |
 | `APP_USER` / `APP_UID` / `APP_GID` | `appuser` / `1000` / `1000` | コンテナ内ユーザー。全ディストリで同一UID/GIDになるよう、ベースイメージの既定ユーザー（例: `ubuntu:24.04`の`ubuntu`ユーザー）と衝突する場合は削除してから作成する |
 | `ENABLE_SUDO` | `true` | `appuser`にNOPASSWDのsudoを与えるか。**常用時は`false`を推奨** |
-| `VNC_PASS` | (必須) | KasmVNC接続パスワード |
+| `VNC_PASS` | (空) | KasmVNC接続パスワード。指定すると起動のたびにこの値へ設定し直す。空なら初回に乱数を作ってログへ出し、以後は`~/.kasmpasswd`を維持する（`/home/appuser`をvolumeにしていない場合は、コンテナを作り直すたびに新しく作る） |
 | `VNC_LOGIN_USER` | `desktop` | ログインユーザー名 |
 | `VNC_GEOMETRY` / `VNC_DEPTH` | `1920x1080` / `24` | 画面解像度・色深度 |
 | `VNC_PORT` / `VNC_BIND_ADDRESS` | `8443` / `127.0.0.1` | ホスト側の公開ポート・バインドアドレス |

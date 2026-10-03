@@ -4,7 +4,7 @@ set -euo pipefail
 readonly APP_USER="${APP_USER:-appuser}"
 readonly APP_HOME="/home/${APP_USER}"
 readonly VNC_LOGIN_USER="${VNC_LOGIN_USER:-desktop}"
-readonly VNC_PASS="${VNC_PASS:?VNC_PASS is required}"
+readonly VNC_PASS="${VNC_PASS:-}"
 readonly VNC_GEOMETRY="${VNC_GEOMETRY:-1920x1080}"
 readonly VNC_DEPTH="${VNC_DEPTH:-24}"
 readonly VNC_DISPLAY="${VNC_DISPLAY:-:1}"
@@ -23,6 +23,27 @@ validate_geometry() {
   local height="${BASH_REMATCH[2]}"
   (( width >= 800 && width <= 7680 && height >= 600 && height <= 4320 )) || return 1
   [[ "${VNC_DEPTH}" =~ ^(16|24|32)$ ]]
+}
+
+setup_vnc_password() {
+  # VNC_PASSの指定あり: 従来どおり起動のたびに.kasmpasswdを作り直す。
+  # 指定なし: 既存の.kasmpasswdがあれば維持する（パスワードの変更はkasmvncpasswdで行い、
+  #           /home/appuserのvolumeに残る。KasmVNCは再起動なしで読み直す）。
+  #           無ければ乱数のパスワードを作り、初回の1回だけログへ出す。
+  local pass="${VNC_PASS}" generated=0
+  if [[ -z "${pass}" ]]; then
+    [[ -s "${APP_HOME}/.kasmpasswd" ]] && return 0
+    pass="$(head -c 24 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)"
+    generated=1
+  fi
+  printf '%s\n%s\n' "${pass}" "${pass}" \
+    | gosu "${APP_USER}" kasmvncpasswd -u "${VNC_LOGIN_USER}" -w "${APP_HOME}/.kasmpasswd"
+  chown "${APP_USER}:${APP_USER}" "${APP_HOME}/.kasmpasswd"
+  chmod 600 "${APP_HOME}/.kasmpasswd"
+  if (( generated )); then
+    echo "entrypoint: initial VNC login: user=${VNC_LOGIN_USER} password=${pass}"
+    echo "entrypoint: change it after logging in (kasmvncpasswd -u ${VNC_LOGIN_USER} -w ~/.kasmpasswd)"
+  fi
 }
 
 run_hooks() {
@@ -59,10 +80,7 @@ sed -e "s/__VNC_WIDTH__/${width}/g" \
 chown "${APP_USER}:${APP_USER}" "${APP_HOME}/.vnc/kasmvnc.yaml"
 chmod 600 "${APP_HOME}/.vnc/kasmvnc.yaml"
 
-printf '%s\n%s\n' "${VNC_PASS}" "${VNC_PASS}" \
-  | gosu "${APP_USER}" kasmvncpasswd -u "${VNC_LOGIN_USER}" -w "${APP_HOME}/.kasmpasswd"
-chown "${APP_USER}:${APP_USER}" "${APP_HOME}/.kasmpasswd"
-chmod 600 "${APP_HOME}/.kasmpasswd"
+setup_vnc_password
 
 run_hooks
 

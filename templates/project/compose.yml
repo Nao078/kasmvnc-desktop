@@ -9,7 +9,8 @@ services:
     environment:
       TZ: ${TZ:-Asia/Tokyo}
       VNC_LOGIN_USER: ${VNC_LOGIN_USER:-desktop}
-      VNC_PASS: ${VNC_PASS:?VNC_PASS is required}
+      # 空なら初回に乱数のパスワードを作ってログへ出し、以後は~/.kasmpasswdを維持する
+      VNC_PASS: ${VNC_PASS:-}
       VNC_GEOMETRY: ${VNC_GEOMETRY:-1920x1080}
       VNC_DEPTH: ${VNC_DEPTH:-24}
     ports:

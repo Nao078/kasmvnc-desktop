@@ -149,6 +149,35 @@ else
   fail "container did not stop within 20s of SIGTERM"
 fi
 
+# 7. VNC_PASS未指定: 初回は乱数のパスワードをログへ出してそれでログインでき、再起動しても維持される
+echo "==> Checking VNC_PASS-less startup (generated password, kept across restart)"
+readonly nopass_container="${container}-nopass"
+docker run -d --name "${nopass_container}" --init -p "127.0.0.1:${host_port}:8443" "${image}" >/dev/null
+nopass_cleanup() { docker rm -f "${nopass_container}" >/dev/null 2>&1 || true; }
+trap 'nopass_cleanup; cleanup' EXIT
+http_code() { curl -k -s -o /dev/null -w '%{http_code}' -u "$1:$2" "https://127.0.0.1:${host_port}/" || echo 000; }
+generated_pass=""
+for _ in $(seq 1 30); do
+  generated_pass="$(docker logs "${nopass_container}" 2>&1 | sed -n 's/^entrypoint: initial VNC login: user=[^ ]* password=//p' | head -1)"
+  [[ -n "${generated_pass}" ]] && break
+  sleep 1
+done
+if [[ -z "${generated_pass}" ]]; then
+  fail "no generated password in the log"
+else
+  sleep 8
+  [[ "$(http_code desktop "${generated_pass}")" == "200" ]] \
+    && pass "generated password logs in" || fail "generated password was rejected"
+  docker restart "${nopass_container}" >/dev/null
+  sleep 12
+  if [[ "$(http_code desktop "${generated_pass}")" == "200" ]] \
+     && [[ "$(docker logs --since 10s "${nopass_container}" 2>&1 | grep -c 'initial VNC login')" == "0" ]]; then
+    pass "password kept across restart (no new password generated)"
+  else
+    fail "password was not kept across restart"
+  fi
+fi
+
 echo
 if [[ ${failures} -eq 0 ]]; then
   echo "All smoke checks passed."
