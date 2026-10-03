@@ -15,6 +15,8 @@ Wine/MT5など特定用途の要素はベースに含めない（もとは `ukan
 
 `<semver>` はKasmVNCのバージョンではなく、この `kasmvnc-desktop` 自体のリリースバージョン（gitタグ `v<semver>`）を指す。`latest` タグは提供しない。常用するプロジェクトは固定タグを使うこと。
 
+GHCRへの公開は、`v<semver>` タグをpushしたときだけ行う（CIが固定タグ `ubuntu-24.04-<semver>` と可変タグ `ubuntu-24.04` を同時に更新する）。`main` やPRへのpushは、ビルドとスモークテストだけで公開しない。リリースは `git tag v<semver> && git push origin v<semver>` で行う。
+
 ## 利用側プロジェクトでの使い方
 
 `templates/project/` に最小構成の雛形がある。
@@ -100,5 +102,5 @@ compose.yml         # このリポジトリ自体の動作確認用（distro切�
 .env.example        # ランタイム変数のサンプル
 templates/project/  # 利用側プロジェクトの雛形
 tests/smoke.sh       # スモークテスト
-.github/workflows/build.yml  # CI（ビルド・テスト・GHCR push）
+.github/workflows/build.yml  # CI（main・PRはビルドとテスト、タグ`v*.*.*`のpushでGHCRへ公開）
 ```
